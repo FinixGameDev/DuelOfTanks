@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PipelineBuildEvent xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-  <SourceFile>C:/Users/Utilizador/Documents/IPCA/IP3D/Trabalho/codigo/DuelOfTanks/DuelOfTanks/Content/lh3d1.jpg</SourceFile>
-  <SourceTime>2020-10-20T12:56:58.1066331+01:00</SourceTime>
-  <DestFile>C:/Users/Utilizador/Documents/IPCA/IP3D/Trabalho/codigo/DuelOfTanks/DuelOfTanks/Content/bin/Windows/Content/lh3d1.xnb</DestFile>
-  <DestTime>2020-10-20T16:08:54.2701222+01:00</DestTime>
+  <SourceFile>C:/Users/Utilizador/Source/Repos/DuelOfTanks/Content/lh3d1.jpg</SourceFile>
+  <SourceTime>2020-10-29T17:25:21.2863445+00:00</SourceTime>
+  <DestFile>C:/Users/Utilizador/Source/Repos/DuelOfTanks/Content/bin/Windows/Content/lh3d1.xnb</DestFile>
+  <DestTime>2020-10-30T11:31:52.6142578+00:00</DestTime>
   <Importer>TextureImporter</Importer>
   <ImporterTime>2018-12-08T16:35:54+00:00</ImporterTime>
   <Processor>TextureProcessor</Processor>
