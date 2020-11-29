@@ -26,7 +26,7 @@ namespace DuelOfTanks
             this.yaw = yaw;
             this.pitch = pitch;
             this.terrain = terrain;
-            velocity = 5f;
+            velocity = 25f;
             offset = 1.7f;
 
             this.width = device.Viewport.Width;

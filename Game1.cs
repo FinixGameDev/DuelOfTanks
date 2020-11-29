@@ -80,6 +80,7 @@ namespace DuelOfTanks
             GraphicsDevice.Clear(Color.CornflowerBlue);
 
             map.Draw(GraphicsDevice, camera);
+            map.DebugDraw(GraphicsDevice, camera);
 
             base.Draw(gameTime);
         }

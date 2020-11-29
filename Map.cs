@@ -10,10 +10,14 @@ namespace DuelOfTanks
 {
     class Map
     {
+        VertexPositionColor[] debugVertexList;
+        BasicEffect debugEffect;
+
         BasicEffect effect;
         VertexBuffer vBuffer;
         IndexBuffer iBuffer;
         float[] heightMapData;
+        Vector3[] normalData;
         public Texture2D heightMap;
 
         public Map(Texture2D heightMap, Texture2D texture,GraphicsDevice device)
@@ -22,6 +26,7 @@ namespace DuelOfTanks
             this.heightMap = heightMap;
 
             // Vamos usar um efeito básico
+            debugEffect = new BasicEffect(device);
             effect = new BasicEffect(device);
             // Calcula a aspectRatio, a view matrix e a projeção
             float aspectRatio = (float)device.Viewport.Width /
@@ -32,15 +37,18 @@ namespace DuelOfTanks
             effect.Projection = Matrix.CreatePerspectiveFieldOfView(
                 MathHelper.ToRadians(45.0f),
                 aspectRatio, 0.1f, 1000.0f);
-            effect.LightingEnabled = false;
             effect.VertexColorEnabled = false;
             effect.TextureEnabled = true;
             effect.Texture = texture;
             // Cria os eixos 3D
             CreateGeometry(device);
         }
+
         private void CreateGeometry(GraphicsDevice device)
         {
+            //Light normals array
+            normalData = new Vector3[heightMap.Width * heightMap.Height];
+
             //Creat Height Map color Array
             Color[] heightColors;
             heightColors = new Color[heightMap.Width * heightMap.Height];
@@ -56,9 +64,14 @@ namespace DuelOfTanks
             int vertexCount = heightMap.Width * heightMap.Height;
             vertices = new VertexPositionNormalTexture[vertexCount];
 
+            debugVertexList = new VertexPositionColor[vertexCount * 2];
+
             for (int z = 0; z < heightMap.Height; z++)
                 for (int x = 0; x < heightMap.Width; x++)
                 {
+                    Vector3[] n;
+                    Vector3 addNormal;
+
                     int i;
                     i = z * heightMap.Width + x;
 
@@ -67,10 +80,164 @@ namespace DuelOfTanks
                     u = x % 2;
                     v = z % 2;
 
+
+                    //Normal Vector calculation
+                    if (i == 0) //Upper Left Corner
+                    {
+                        n = new Vector3[3];
+
+                        n[0] = new Vector3(0f, heightMapData[i + heightMap.Width] - h, 1f); //Down
+                        n[1] = new Vector3(1f, heightMapData[i + heightMap.Width + 1] - h, 1f); //Lower Right
+                        n[2] = new Vector3(1f, heightMapData[i + 1] - h, 0f); //Right
+
+                        addNormal = (Vector3.Cross(n[0], n[1]) + Vector3.Cross(n[1], n[2])) / 2;
+                        addNormal.Normalize();
+
+                        normalData[i] = addNormal;
+                    }
+                    else if (i == heightMap.Width - 1) //Upper Right Corner
+                    {
+                        n = new Vector3[3];
+
+                        n[0] = new Vector3(-1f, heightMapData[i - 1] - h, 0f); //Left
+                        n[1] = new Vector3(-1f, heightMapData[i + heightMap.Width - 1] - h, 1f); // Lower Left
+                        n[2] = new Vector3(0f, heightMapData[i + heightMap.Width] - h, 1f); //Down
+
+                        addNormal = (Vector3.Cross(n[0], n[1]) + Vector3.Cross(n[1], n[2])) / 2;
+                        addNormal.Normalize();
+
+                        normalData[i] = addNormal;
+                    }
+                    else if (i == (heightMap.Height - 1) * heightMap.Width) //Lower Left Corner
+                    {
+                        n = new Vector3[3];
+
+                        n[0] = new Vector3(1f, heightMapData[i + 1] - h, 0f); //Right
+                        n[1] = new Vector3(1f, heightMapData[i - heightMap.Width + 1] - h, -1f); //Upper Right
+                        n[2] = new Vector3(0f, heightMapData[i - heightMap.Width] - h, -1f); //Up
+
+                        addNormal = (Vector3.Cross(n[0], n[1]) + Vector3.Cross(n[1], n[2])) / 2;
+                        addNormal.Normalize();
+
+                        normalData[i] = addNormal;
+                    }
+                    else if (i == (heightMap.Height - 1) * heightMap.Width + heightMap.Width - 1) // Lower Right Corner
+                    {
+                        n = new Vector3[3];
+
+                        n[0] = new Vector3(0f, heightMapData[i - heightMap.Width] - h, -1f); //Up
+                        n[1] = new Vector3(-1f, heightMapData[i - heightMap.Width - 1] - h, -1f); // Upper Left 
+                        n[2] = new Vector3(-1f, heightMapData[i - 1] - h, 0f); // Left
+
+                        addNormal = (Vector3.Cross(n[0], n[1]) + Vector3.Cross(n[1], n[2])) / 2;
+                        addNormal.Normalize();
+
+                        normalData[i] = addNormal;
+                    }
+                    else if (i % heightMap.Height == 0) // Left Border   
+                    {
+                        n = new Vector3[5];
+
+                        n[0] = new Vector3(0f, heightMapData[i + heightMap.Width] - h, 1f); //Down
+                        n[1] = new Vector3(1f, heightMapData[i + heightMap.Width + 1] - h, 1f); //Lower Right
+                        n[2] = new Vector3(1f, heightMapData[i + 1] - h, 0f); //Right
+                        n[3] = new Vector3(1f, heightMapData[i - heightMap.Width + 1] - h, -1f); //Upper Right
+                        n[4] = new Vector3(0f, heightMapData[i - heightMap.Width] - h, -1f); //Up
+
+                        addNormal = (Vector3.Cross(n[0], n[1]) + Vector3.Cross(n[1], n[2]) + Vector3.Cross(n[2], n[3]) + Vector3.Cross(n[3], n[4])) / 4;
+                        addNormal.Normalize();
+
+                        normalData[i] = addNormal;
+                    }
+                    else if (i % heightMap.Height == heightMap.Width - 1) // Right Border
+                    {
+                        n = new Vector3[5];
+
+                        n[0] = new Vector3(0f, heightMapData[i - heightMap.Width] - h, -1f); //Up
+                        n[1] = new Vector3(-1f, heightMapData[i - heightMap.Width - 1] - h, -1f); // Upper Left 
+                        n[2] = new Vector3(-1f, heightMapData[i - 1] - h, 0f); // Left
+                        n[3] = new Vector3(-1f, heightMapData[i + heightMap.Width - 1] - h, 1f); // Lower Left
+                        n[4] = new Vector3(0f, heightMapData[i + heightMap.Width] - h, 1f); //Down
+
+                        addNormal = (Vector3.Cross(n[0], n[1]) + Vector3.Cross(n[1], n[2]) + Vector3.Cross(n[2], n[3]) + Vector3.Cross(n[3], n[4])) / 4;
+                        addNormal.Normalize();
+
+                        normalData[i] = addNormal;
+                    }
+                    else if ( i < heightMap.Width) // Up Border
+                    {
+                        n = new Vector3[5];
+
+                        n[0] = new Vector3(-1f, heightMapData[i - 1] - h, 0f); // Left
+                        n[1] = new Vector3(-1f, heightMapData[i + heightMap.Width - 1] - h, 1f); // Lower Left
+                        n[2] = new Vector3(0f, heightMapData[i + heightMap.Width] - h, 1f); //Down
+                        n[3] = new Vector3(1f, heightMapData[i + heightMap.Width + 1] - h, 1f); //Lower Right
+                        n[4] = new Vector3(1f, heightMapData[i + 1] - h, 0f); //Right
+
+                        addNormal = (Vector3.Cross(n[0], n[1]) + Vector3.Cross(n[1], n[2]) + Vector3.Cross(n[2], n[3]) + Vector3.Cross(n[3], n[4])) / 4;
+                        addNormal.Normalize();
+
+                        normalData[i] = addNormal;
+                    }
+                    else if ((i > (heightMap.Height - 1) * heightMap.Width)) // Down Border
+                    {
+                        n = new Vector3[5];
+
+                        n[0] = new Vector3(1f, heightMapData[i + 1] - h, 0f); //Right
+                        n[1] = new Vector3(1f, heightMapData[i - heightMap.Width + 1] - h, -1f); //Upper Right
+                        n[2] = new Vector3(0f, heightMapData[i - heightMap.Width] - h, -1f); //Up
+                        n[3] = new Vector3(-1f, heightMapData[i - heightMap.Width - 1] - h, -1f); // Upper Left 
+                        n[4] = new Vector3(-1f, heightMapData[i - 1] - h, 0f); // Left
+
+                        addNormal = (Vector3.Cross(n[0], n[1]) + Vector3.Cross(n[1], n[2]) + Vector3.Cross(n[2], n[3]) + Vector3.Cross(n[3], n[4])) / 4;
+                        addNormal.Normalize();
+
+                        normalData[i] = addNormal;
+                    }
+                    else // Nespresso what ELSE
+                    {
+                        n = new Vector3[8];
+
+                        n[0] = new Vector3(0f, heightMapData[i - heightMap.Width] - h, -1f); //Up
+                        n[1] = new Vector3(-1f, heightMapData[i - heightMap.Width - 1] - h, -1f); // Upper Left 
+                        n[2] = new Vector3(-1f, heightMapData[i - 1] - h, 0f); // Left
+                        n[3] = new Vector3(-1f, heightMapData[i + heightMap.Width - 1] - h, 1f); // Lower Left
+                        n[4] = new Vector3(0f, heightMapData[i + heightMap.Width] - h, 1f); //Down
+                        n[5] = new Vector3(1f, heightMapData[i + heightMap.Width + 1] - h, 1f); //Lower Right
+                        n[6] = new Vector3(1f, heightMapData[i + 1] - h, 0f); //Right
+                        n[7] = new Vector3(1f, heightMapData[i - heightMap.Width + 1] - h, -1f); //Upper Right
+                        
+
+                        for (int j = 0; j < 8; j++)
+			            {
+                            if (j == 7)
+	                        {
+                                addNormal = Vector3.Cross(n[7], n[0]);
+                                addNormal.Normalize();
+
+                                normalData[i] += addNormal;
+	                        }
+                            else
+	                        {
+                                addNormal = Vector3.Cross(n[j], n[j + 1]);
+                                addNormal.Normalize();
+
+                                normalData[i] += addNormal;
+	                        }
+			            }
+                       
+                        normalData[i] = Vector3.Divide(normalData[i], 8);
+
+                    }
+
                     vertices[i] = new VertexPositionNormalTexture(
                         new Vector3(x, h, z), 
-                        Vector3.Up, 
+                        normalData[i], 
                         new Vector2(u, v));
+
+                    //Debug Normal
+                    debugVertexList[2 * i] = new VertexPositionColor(new Vector3(x, h, z), Color.Red);
+                    debugVertexList[2 * i + 1] = new VertexPositionColor(new Vector3(x, h, z) + normalData[i], Color.Cyan);
 
                 }
 
@@ -97,7 +264,8 @@ namespace DuelOfTanks
             effect.Projection = camera.projectionMatrix;
             effect.View = camera.viewMatrix;
             effect.World = Matrix.Identity;
-
+            effect.LightingEnabled = true;
+            effect.EnableDefaultLighting();
 
             // Set Effect to draw
             effect.CurrentTechnique.Passes[0].Apply();
@@ -117,7 +285,8 @@ namespace DuelOfTanks
             effect.Projection = camera.projectionMatrix;
             effect.View = camera.viewMatrix;
             effect.World = Matrix.Identity;
-
+            effect.LightingEnabled = true;
+            effect.EnableDefaultLighting();
 
             // Set Effect to draw
             effect.CurrentTechnique.Passes[0].Apply();
@@ -129,7 +298,23 @@ namespace DuelOfTanks
                     i * (2 * heightMap.Height),
                     heightMap.Height * 2 - 2
                     );
+
         }
+
+        public void DebugDraw(GraphicsDevice device, SurfaceFollowCamera camera)
+        {
+            //Debug Normals
+            debugEffect.Projection = camera.projectionMatrix;
+            debugEffect.View = camera.viewMatrix;
+            debugEffect.World = Matrix.Identity;
+            debugEffect.LightingEnabled = false;
+            debugEffect.VertexColorEnabled = true;
+            debugEffect.CurrentTechnique.Passes[0].Apply();
+
+            for (int i = 0; i < vBuffer.VertexCount; i++)
+                device.DrawUserPrimitives<VertexPositionColor>(PrimitiveType.LineList, debugVertexList, 2*i, 1);
+        }
+
 
         public float GetHeight(float x, float z) 
         {
@@ -143,9 +328,9 @@ namespace DuelOfTanks
             int a, b, c, d;
 
             a = (int)z * heightMap.Height + (int)x;
-            b = (int)z * heightMap.Height + (int)x + 1;
-            c =  (int)(z + 1) * heightMap.Height + (int)x;
-            d = (int)(z + 1) * heightMap.Height + (int)x + 1;
+            b = a + 1;
+            c = a + heightMap.Height;
+            d = c + 1;
 
             //Distance diference calculation
             float da, db, dab, dcd, y, yab, ycd;

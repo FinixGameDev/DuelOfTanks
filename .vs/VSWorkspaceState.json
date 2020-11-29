@@ -1,7 +1,8 @@
 {
   "ExpandedNodes": [
-    ""
+    "",
+    "\\Content"
   ],
-  "SelectedNode": "\\DuelOfTanks.csproj",
+  "SelectedNode": "\\Map.cs",
   "PreviewInSolutionExplorer": false
 }
